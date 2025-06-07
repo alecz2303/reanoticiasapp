@@ -1,0 +1,27 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+.pub/
+build/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+
+# Android related
+android/.gradle/
+android/captures/
+android/key.properties
+
+# VS Code
+.vscode/
+
+# Xcode
+xcuserdata/
+*.xcworkspace
+
+# IntelliJ related
+.idea/
+*.iml
+
+# Others
+*.log

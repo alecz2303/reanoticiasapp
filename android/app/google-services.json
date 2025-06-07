@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "828822370011",
+    "project_id": "rea-nayarit-a61e0",
+    "storage_bucket": "rea-nayarit-a61e0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:828822370011:android:d87df105ef6c58fc067efe",
+        "android_client_info": {
+          "package_name": "com.example.noticias_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7I2FUqLlMnHvkHqkZSe2MQqqBpjOO7G4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
