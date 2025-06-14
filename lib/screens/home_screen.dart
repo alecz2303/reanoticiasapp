@@ -16,11 +16,18 @@ class _HomeScreenState extends State<HomeScreen> {
   List categories = [];
   List postsPrincipales = [];
   Map<String, List> categoryPosts = {};
-  Map<String, bool> categoryLoading = {}; // Para saber si una sección sigue cargando
+  Map<String, bool> categoryLoading = {};
   bool isLoading = true;
   int? selectedCategoryId;
   String? selectedCategoryName;
   List filteredPosts = [];
+
+  // Para animación de icono en SnackBar
+  int _refreshIconIndex = 0;
+  final List<IconData> _refreshIcons = [
+    Icons.refresh,
+    Icons.check_circle,
+  ];
 
   @override
   void initState() {
@@ -95,62 +102,110 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Animación de SnackBar con icono animado
+  void _showAnimatedSnackBar(BuildContext context) {
+    setState(() => _refreshIconIndex = 0);
+
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          AnimatedSwitcher(
+            duration: Duration(milliseconds: 600),
+            child: Icon(
+              _refreshIcons[_refreshIconIndex],
+              key: ValueKey(_refreshIcons[_refreshIconIndex]),
+              color: Colors.green,
+              size: 28,
+            ),
+            transitionBuilder: (child, animation) =>
+                RotationTransition(turns: animation, child: child),
+          ),
+          SizedBox(width: 10),
+          Text('¡Noticias actualizadas!'),
+        ],
+      ),
+      duration: Duration(seconds: 2),
+      backgroundColor: Colors.black87,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+    // Cambia el icono al de "check" después de un pequeño delay
+    Future.delayed(Duration(milliseconds: 700), () {
+      setState(() => _refreshIconIndex = 1);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: LogoHeader(),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: goToSearch,
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(50),
-          child: CategoryMenu(
-            categories: categories,
-            selectedCategoryId: selectedCategoryId,
-            onCategorySelected: (int id, String name) => filterByCategory(id, name),
+    // Usamos un Builder para obtener el context correcto para el SnackBar
+    return Builder(
+      builder: (snackContext) => Scaffold(
+        appBar: AppBar(
+          title: LogoHeader(),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.search),
+              onPressed: goToSearch,
+            ),
+          ],
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(50),
+            child: CategoryMenu(
+              categories: categories,
+              selectedCategoryId: selectedCategoryId,
+              onCategorySelected: (int id, String name) => filterByCategory(id, name),
+            ),
           ),
         ),
-      ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : filteredPosts.isNotEmpty
-          ? ListView(
-        children: filteredPosts.map((post) =>
-            NewsTile(
-              post: post,
-              big: true,
-              categories: categories,
-              onCategorySelected: (int id, String name) => filterByCategory(id, name),
-              onTap: openDetail,
-            ),
-        ).toList(),
-      )
-          : ListView(
-        children: [
-          NewsGrid(
-            postsPrincipales: postsPrincipales,
-            categories: categories,
-            onCategorySelected: (int id, String name) => filterByCategory(id, name),
-            openDetail: openDetail,
-          ),
-          ...categories.where((cat) => cat['name'] != 'Principales').map((cat) {
-            final name = cat['name'];
-            final posts = categoryPosts[name] ?? [];
-            final loading = categoryLoading[name] ?? false;
-            return CategorySection(
-              categoryTitle: name,
-              posts: posts,
-              categories: categories,
-              onCategorySelected: (int id, String name) => filterByCategory(id, name),
-              openDetail: openDetail,
-              loading: loading, // Debes agregar esto a tu CategorySection para mostrar loader
-            );
-          }),
-        ],
+        body: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: () async {
+                  await loadInitData();
+                  // Muestra SnackBar cuando termina la recarga
+                  _showAnimatedSnackBar(snackContext);
+                },
+                child: filteredPosts.isNotEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: filteredPosts.map((post) =>
+                          NewsTile(
+                            post: post,
+                            big: true,
+                            categories: categories,
+                            onCategorySelected: (int id, String name) => filterByCategory(id, name),
+                            onTap: openDetail,
+                          ),
+                        ).toList(),
+                      )
+                    : ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          NewsGrid(
+                            postsPrincipales: postsPrincipales,
+                            categories: categories,
+                            onCategorySelected: (int id, String name) => filterByCategory(id, name),
+                            openDetail: openDetail,
+                          ),
+                          ...categories.where((cat) => cat['name'] != 'Principales').map((cat) {
+                            final name = cat['name'];
+                            final posts = categoryPosts[name] ?? [];
+                            final loading = categoryLoading[name] ?? false;
+                            return CategorySection(
+                              categoryTitle: name,
+                              posts: posts,
+                              categories: categories,
+                              onCategorySelected: (int id, String name) => filterByCategory(id, name),
+                              openDetail: openDetail,
+                              loading: loading,
+                            );
+                          }),
+                        ],
+                      ),
+              ),
       ),
     );
   }
